@@ -1,0 +1,686 @@
+---
+title: "Final Project"
+author: "Jeffrey Scanlon"
+date: "11/25/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(dplyr)
+library(naniar)
+nlsy <- read_csv("http://www.andrew.cmu.edu/user/achoulde/94842/final_project/nlsy79/nlsy79_income.csv")
+
+colnames(nlsy) <- c("VERSION_R25_2012",
+    "CASEID_1979",
+    "FAM-2A_1979",
+    "FAM-POB_1979",
+    "FAM-3_1979",
+    "FAM-3A_1979",
+    "FAM-RES_1979",
+    "FAM-6_1979",
+    "R_REL-1_COL_1979",
+    "SCHOOL-31_1979",
+    "MIL-6_1979",
+    "WOMENS-ROLES_000001_1979",
+    "WOMENS-ROLES_000002_1979",
+    "WOMENS-ROLES_000003_1979",
+    "WOMENS-ROLES_000004_1979",
+    "WOMENS-ROLES_000006_1979",
+    "WOMENS-ROLES_000007_1979",
+    "WOMENS-ROLES_000008_1979",
+    "EXP-OCC_1979",
+    "EXP-9_1979",
+    "race",
+    "gender",
+    "MARSTAT-KEY_1979",
+    "FAMSIZE_1979",
+    "POVSTATUS_1979",
+    "POLICE-1_1980",
+    "POLIC-1C_1980",
+    "POLICE-2_1980",
+    "ALCH-2_1983",
+    "DS-8_1984",
+    "DS-9_1984",
+    "Q13-5_TRUNC_REVISED_1990",
+    "POVSTATUS_1990",
+    "HGCREV90_1990",
+    "jobs.num",
+    "NUMCH90_1990",
+    "AGEYCH90_1990",
+    "DS-12_1998",
+    "DS-13_1998",
+    "INDALL-EMP.01_2000",
+    "CPSOCC80.01_2000",
+    "OCCSP-55I_CODE_2000",
+    "Q2-15B_2000",
+    "Q10-2_2000",
+    "Q13-5_TRUNC_REVISED_2000",
+    "FAMSIZE_2000",
+    "TNFI_TRUNC_2000",
+    "POVSTATUS_2000",
+    "MARSTAT-COL_2000",
+    "MARSTAT-KEY_2000",
+    "MO1M1B_XRND",
+    "Q2-10B~Y_2012",
+    "industry",
+    "occupation",
+    "OCCSP-55I_CODE_2012",
+    "Q2-15A_2012",
+    "Q12-6_2012",
+    "income",
+    "Q13-5_SR000001_2012",
+    "Q13-5_SR000002_2012",
+    "Q13-18_TRUNC_2012",
+    "Q13-18_SR000001_TRUNC_2012",
+    "FAMSIZE_2012",
+    "REGION_2012",
+    "HighestGrade",
+    "URBAN-RURAL_2012",
+    "JOBSNUM_2012")
+
+nlsy2 <- mutate(nlsy,
+               as.numeric(income),
+       gender = recode_factor(gender, 
+                              `1` = "Male",
+                              `2` = "Female"),
+       race = recode_factor(race,
+                              `3` = "Other",
+                              `2` = "Black",
+                              `1` = "Hispanic"),
+       HighestGrade = recode_factor(HighestGrade,
+                                `0` = "El. School or Less",
+                                `93` = "El. School or Less",
+                                `94` = "El. School or Less",
+                                `1` = "El. School or Less",
+                                `2` = "El. School or Less",
+                                `3` = "El. School or Less",
+                                `4` = "El. School or Less",
+                                `5` = "El. School or Less",
+                                `6` = "Middle School",
+                                `7` = "Middle School",
+                                `8` = "Middle School",
+                                `9` = "Some High School",
+                                `10` = "Some High School",
+                                `11` = "Some High School",
+                                `12` = "HS Diploma",
+                                `13` = "Some College",
+                                `14` = "Some College",
+                                `15` = "Some College",
+                                `16` = "Bachelors",
+                                `17` = "Post-Bachelors",
+                                `18` = "Post-Bachelors",
+                                `19` = "Post-Bachelors",
+                                `20` = "Post-Bachelors",
+                                `95` = "Ungraded",
+                                `-1` = "Skip",
+                                `-2` = "Skip",
+                                `-3` = "Skip",
+                                `-4` = "Skip",
+                                `-5` = "Skip"),
+               occupation =
+       case_when(
+          occupation %in% 10:430 ~ "Exec/Admin/Manager",
+          occupation %in% 500:950 ~ "Management",
+          occupation %in% 1000:1240 ~ "Math/ComputerScient",
+          occupation %in% 1300:1560 ~ "Engin/Archi/Survey/Technic",
+          occupation %in% 1600:1760 ~ "PhysicScientist",
+          occupation %in% 1800:1860 ~ "SocialScientist",
+          occupation %in% 1900:1960 ~ "Life/Physical/SocSciTech",
+          occupation %in% 2000:2060 ~ "Counselor/Religious",
+          occupation %in% 2100:2150 ~ "Lawyer/Judge/LegalSupp",
+          occupation %in% 2200:2340 ~ "Teacher",
+          occupation %in% 2400:2550 ~ "Ed/Training/LibWorker",
+          occupation %in% 2600:2760 ~ "Entertain/Perform/Sport",
+          occupation %in% 2800:2960 ~ "Media/CommunicationWorker",
+          occupation %in% 3000:3260 ~ "HealthDiagnose/TreatPractict",
+          occupation %in% 3300:3650 ~ "HealthCareTechnical/Support",
+          occupation %in% 3700:3950 ~ "ProtectiveServ",
+          occupation %in% 4000:4160 ~ "FoodPrep/Serv",
+          occupation %in% 4200:4250 ~ "Cleaning/BuildingServ",
+          occupation %in% 4300:4430 ~ "EntertainAttendant",
+          occupation == 4460 ~ "FuneralRelated",
+          occupation %in% 4500:4650 ~ "PersonalCare/Serv",
+          occupation %in% 4700:4960 ~ "Sales",
+          occupation %in% 5000:5930 ~ "Office/AdminSupport",
+          occupation %in% 6000:6130 ~ "Farm/Fish/ForestryOccup",
+          occupation %in% 6200:6940 ~ "ConstructTrade/Extract",
+          occupation %in% 7000:7620 ~ "Install/Mainten/RepairWork",
+          occupation %in% 7700:7750 ~ "Production/OperatingWork",
+          occupation %in% 7800:7850 ~ "FoodPrepOccup",
+          occupation %in% 7900:8960 ~ "Setter/Operator/Tender",
+          occupation %in% 9000:9750 ~ "Transport/MaterialWork",
+          occupation %in% 9800:9830 ~ "MilitarySpecif",
+          occupation == 9840 ~ "ArmedForces",
+          occupation == 9950 ~ "NotLabor",
+          occupation == 9990 ~ "Uncodeable",
+          occupation == -5 ~ "skip5",
+          occupation == -4 ~ "skip4",
+          occupation == -3 ~ "skip3",
+          occupation == -2 ~ "skip2",
+          occupation == -1 ~ "skip1",),
+       occupation = recode_factor(occupation,
+                  `Exec/Admin/Manager` = "Exec/Admin/Manager",
+                 `Management` = "Management",
+                 `Math/ComputerScient` = "Math/ComputerScient",
+                `Engin/Archi/Survey/Technic` ="Engin/Archi/Survey/Technic",
+                `PhysicScientist` = "PhysicScientist",
+                `SocialScientist` = "SocialScientist",
+                `Life/Physical/SocSciTech` = "Life/Physical/SocSciTech",
+                `Counselor/Religious` = "Counselor/Religious",
+                `Lawyer/Judge/LegalSupp` = "Lawyer/Judge/LegalSupp",
+                `Teacher` = "Teacher",
+                `Ed/Training/LibWorker` = "Ed/Training/LibWorker",
+                `Entertain/Perform/Sport` = "Entertain/Perform/Sport", 
+                `Media/CommunicationWorker` = "Media/CommunicationWorker", `HealthDiagnose/TreatPractict` = "HealthDiagnose/TreatPractict", `HealthCareTechnical/Support` = "HealthCareTechnical/Support", `ProtectiveServ` = "ProtectiveServ", `FoodPrep/Serv` = "FoodPrep/Serv", `Cleaning/BuildingServ` = "Cleaning/BuildingServ", `EntertainAttendant` = "EntertainAttendant", `FuneralRelated` = "FuneralRelated", `PersonalCare/Serv` = "PersonalCare/Serv", `Sales` = "Sales", `Office/AdminSupport` = "Office/AdminSupport", `Farm/Fish/ForestryOccup` = "Farm/Fish/ForestryOccup",        `ConstructTrade/Extract` = "ConstructTrade/Extract", `Install/Mainten/RepairWork` = "Install/Mainten/RepairWork", `Production/OperatingWork` = "Production/OperatingWork", `Setter/Operator/Tender` = "Setter/Operator/Tender", `Transport/MaterialWork` = "Transport/MaterialWork", `MilitarySpecif` = "MilitarySpecif", `ArmedForces` = "ArmedForces", `NotLabor` = "NotLabor", `Uncodeable` = "Uncodeable", `skip5` = "skip5", `skip4` = "skip4", `skip3` = "skip3", `skip2` = "skip2", `skip1` = "skip1"),
+        
+              industry =
+        case_when(
+          industry %in% 170:290 ~ "Ag/Forest/Fish/Hunt",
+          industry %in% 370:490 ~ "Mining",
+          industry %in% 570:690 ~ "Utilities",
+          industry == 770 ~ "Construction",
+          industry %in% 1070:3990 ~ "Manufacturing",
+          industry %in% 4070:4590 ~ "WholesaleTrade",
+          industry %in% 4670:5790 ~ "RetailTrade",
+          industry %in% 6070:6390 ~ "Transpt/Warehouse",
+          industry %in% 6470:6780 ~ "Information",
+          industry %in% 6870:6990 ~ "Finance/Insure",
+          industry %in% 7070:7190 ~ "RealEstate/Rental",
+          industry %in% 7270:7490 ~ "Profession/Scientif/Technical",
+          industry %in% 7570:7790 ~ "MGMT/Admin",
+          industry %in% 7860:7890 ~ "EdServices",
+          industry %in% 7970:8470 ~ "HealthCare/SocAssist",
+          industry %in% 8560:8590 ~ "Arts/Ent/Recreation",
+          industry %in% 8660:8690 ~ "Accomodations/FoodServ",
+          industry %in% 8770:9290 ~ "OtherServ",
+          industry %in% 9370:9870 ~ "PublicAdmin/ActiveDuty",
+          industry == 9890  ~ "ArmedForces",
+          industry == 9950 ~ "NotLabor",
+          industry == 9990 ~ "Uncodeable",
+          industry == -5 ~ "skip5",
+          industry == -4 ~ "skip4",
+          industry == -3 ~ "skip3",
+          industry == -2 ~ "skip2",
+          industry == -1 ~ "skip1",),
+       industry = recode_factor(industry,
+                  `HealthCare/SocAssist` = "HealthCare/SocAssist",`Ag/Forest/Fish/Hunt` = "Ag/Forest/Fish/Hunt",
+                 `Mining` = "Mining",
+                 `Utilities` = "Utilities",
+                `Construction` ="Construction",
+                `Manufacturing` = "Manufacturing",
+                `WholesaleTrade` = "WholesaleTrade",
+                `RetailTrade` = "RetailTrade",
+                `Transpt/Warehouse` = "Transpt/Warehouse",
+                `Information` = "Information",
+                `Finance/Insure` = "Finance/Insure",
+                `RealEstate/Rental` = "RealEstate/Rental",
+                `Profession/Scientif/Technical` = "Profession/Scientif/Technical", 
+                `MGMT/Admin` = "MGMT/Admin", `EdServices` = "EdServices", `Arts/Ent/Recreation` = "Arts/Ent/Recreation", `Accomodations/FoodServ` = "Accomodations/FoodServ", `OtherServ` = "OtherServ", `PublicAdmin/ActiveDuty` = "PublicAdmin/ActiveDuty", `ArmedForces` = "ArmedForces", `NotLabor` = "NotLabor", `Uncodeable` = "Uncodeable", `skip5` = "skip5", `skip4` = "skip4", `skip3` = "skip3", `skip2` = "skip2", `skip1` = "skip1")
+)
+
+nlsy2 <- nlsy2 %>%
+  replace_with_na(replace = list(income = c(-1, -2, -3, -4, -5)))
+
+nlsy <- nlsy2 %>%
+  replace_with_na(replace = list(income = c(-1, -2, -3, -4, -5)))
+
+
+
+nlsy <- nlsy %>%
+  filter(income < max(income, na.rm=TRUE))
+         
+occ.data1 <- nlsy [ ! nlsy$occupation %in% c("PhysicScientist", "SocialScientist", "Life/Physical/SocSciTech", "EntertainAttendant", "ArmedForces", "NotLabor", "Uncodeable", "FoodPrepOccup", "Farm/Fish/ForestryOccup", "skip1", "skip2", "skip3", "skip4", "skip5"),]
+
+ind.data1 <- nlsy [ ! nlsy$industry %in% c("Mining", "ArmedForces", "NotLabor", "Uncodeable", "skip5", "skip4", "skip3", "skip2", "skip1"),]
+      
+```
+
+## Question:
+
+#### Is there a significant difference in income between men and women? Does the difference vary depending on other factors?
+
+__*The variables that I have decided to work with are:*__
+* Race
+* Industry
+* Occupation
+* Education Level
+
+## Data Summary
+__*Note: I will use notation "n = x" for relevant plots to indicate the number of survey partipants who responded to the questions used to plot the data.*__
+First, I produced a basic density plot showing the distribution of incomes for male and female survey participants. The plot reveals a bimodal distribution for both genders. Both are skewed right. The first peak in the women's distribution shows a far larger proportion of women grouped around that income level as compared to men. In other words, a larger proportion of women are earning this lowest income level as compared to men. The second peak for men occurs at a larger income (~ $37,000) than the second peak for women (~25,000). The proportion of women earning somewhere between 0 and approximately 37,000 dollars exceeds that of men. However, the proportion of men earning 37,000 or more exceeds that of women. Overall, the plot shows that women are more likely to have "low earning incomes" of 37,000 or less, while men are more likely to have "higher earning incomes" of approximately 37,000 or more. This plot will be important again when it comes time to explain the regression findings toward the end of this report.
+
+__*n = 7024*__
+
+```{r}
+ggplot(nlsy, aes(x=income)) + geom_density(aes(fill=gender), alpha=0.5) + xlab ("Income") + ylab ("Proportion") + ggtitle("Income Distribution Across Survey Participants") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+The boxplot and the table above also show that the average income of men is greater than that of women. The boxplot also shows that the interquartile range extended into a larger income for men, and that the maximum income for men is above 150,000 dollars it is around 112,000 dollars. Women who make more than 112,000 dollars are considered outliers while men have to make slightly more than 150,000 to be considered the same.
+
+__*n = 7024*__
+
+```{r}
+ggplot(nlsy, aes(x=gender, y=income)) + geom_boxplot() + xlab ("Gender") + ylab ("Income") + ggtitle("Boxplots of Income For Male and Female Participants") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+mean.income <- nlsy %>%
+  group_by(gender) %>%
+  summarize(MeanIncome = round(mean(income, na.rm=TRUE), 0))
+kable(mean.income, col.names = c("Gender", "Mean Income"))
+```
+
+```{r}
+
+```
+
+
+# Next, we will look at some simple tables showing mean income across gender and other variables.
+
+#### First, we have mean income by __gender__ and __race__.
+
+In the *"Findings"* section, we will plot these with error bars.
+
+__*n = 7024*__
+
+```{r}
+mean.incomeXrace <- nlsy %>%
+  group_by(gender, race) %>%
+  summarize(mean.income = round(mean(income, na.rm=TRUE), 0))
+kable(spread(mean.incomeXrace, gender, mean.income), format = "markdown", col.names = c("Race", "Mean Income (Male)", "Mean Income (Female)"))
+```
+
+#### Next, mean income by __gender__ and __occupation.__
+
+__*n = 6721 - 156 = 6565*__
+
+156 participants were excluded from this analysis due to membership in a "low count" group ( a group with 30 or fewer participants). This is addressed further in the *"Methodology"* setion.
+
+```{r}
+mean.incomeXoccupation <- nlsy %>%
+  group_by(gender, occupation) %>%
+  summarize(mean.income = round(mean(income, na.rm=TRUE), 0))
+kable(spread(mean.incomeXoccupation, gender, mean.income), format = "markdown", col.names = c("Occupation Type", "Mean Income (Male)", "Mean Income (Female)"))
+```
+
+
+#### Then, mean income by __gender__ and __industry__.
+
+__*n = 6679 - 87 = 6592*__
+
+```{r}
+mean.incomeXindustry <- nlsy %>%
+  group_by(gender, industry) %>%
+  summarize(mean.income = round(mean(income, na.rm=TRUE), 0))
+kable(spread(mean.incomeXindustry, gender, mean.income), format = "markdown", col.names = c("Industry Type", "Mean Income (Male)", "Mean Income (Female)"))
+```
+
+
+#### Lastly, mean income by __gender__ and __highest grade level__ (education level).
+
+__*n = 7301*__
+```{r}
+mean.incomeXgrade <- nlsy %>%
+  group_by(gender, HighestGrade) %>%
+  summarize(mean.income = round(mean(income, na.rm=TRUE), 0))
+kable(spread(mean.incomeXgrade, gender, mean.income), format = "markdown", col.names = c("Highest Education Level", "Mean Income (Male)", "Mean Income (Female)"))
+```
+
+#### __Brief Discussion__
+
+The means tables above for race, occupation, industry, and highest education level *seem* to indicate that there are differences between male and female income for many groups within each of these variables. For example, the average income for men with "Some High School" is __$17,356__ while for women it is __$8,108__. Men appear to be making more than twice as much as women in this subgroup. Likewise, men who are *mathematicians* or *computer scientists* make an average of __$83,167__, while women of the same occupation make __$57,213__, which is much closer to the average income of male *teachers* than it is the average income of male mathematicians or computer scientists.
+
+#### These look like signficant findings to suggest that there is indeed an income gap between men and women. We need to do some hypothesis testing to know for certain.
+
+## Findings
+One way to determine if these differences in income are significant is by using the t.test function to determine the confidence intervals of the average income and then plotting the upper and lower bounds of the intervals as error bars.
+
+The __first table__ below shows the mean income for men and women across three different groups of "race." The second table shows the difference in the average income between men and women (men - women).
+
+The __second table__ shows the difference in the average income of men and the average income of women across three different groups of "race".
+```{r}
+race.data <- nlsy %>%
+  group_by(race, gender) %>%
+  summarize(mean.income = mean(income, na.rm=TRUE),
+            lower = t.test(income)$conf.int[1],
+            upper = t.test(income)$conf.int[2])
+
+
+ggplot(data = race.data, aes(x=race, y=mean.income, fill=gender)) + geom_bar(stat="identity", position = "dodge") + geom_errorbar(aes(ymin=lower, ymax=upper), width=.2,
+  position=position_dodge(0.9))
+
+
+#Income gap plots: Race
+gap.data1 <- nlsy %>%
+  group_by(race) %>%
+  summarize(income.gap = t.test(income~gender, na.rm = TRUE)$estimate[1] - t.test(income~gender, na.rm = TRUE)$estimate[2], upper = t.test(income~gender)$conf.int[1],
+       lower = t.test(income~gender)$conf.int[2],
+       is.signif = as.numeric(t.test(income~gender)$p.value<0.5))
+
+gap.data1 <- mutate(gap.data1, race = reorder(race, income.gap))
+
+ggplot(data = gap.data1, aes(x = race, y = income.gap)) + geom_bar(stat = "identity") + xlab ("Race") +
+  ylab ("Income gap($)") + ggtitle("Income gap between men and women, by race") + guides(fill = FALSE) + geom_errorbar(aes(ymax = upper, ymin = lower), width = 0.1, size = 1) + theme(text = element_text(size=12)) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+#### Interpreting Significance
+In the first table, a significant difference between incomes for men and women is shown by any pairing of male and female incomes in which the error bars of both incomes do not overlap with the mean income of the corresponding pair. For example, the average income for men of "other" race is approximately 52,000 dollars. For women, it is about 32,000 dollars. The error bars for the average men's income do not overlap with the average women's income (32,000 dollars), and the error bars for the average women's income do not overlap with the average for men's income (52,000 dollars). Therefore, we conclude the income difference between men and women of the race "other" is significant. Using the same logic, we can see that the income difference is signficiant for men and women within the other two race categories as well.
+
+When comparing across race groups, it may be slightly less clear. For example, the error bars for the income of "other" women come close to overlapping with the average income of black men, and vice versa. Ultimately, the error bars seem to be exclusive suggesting the average income of "other" race women is signficantly greater than the average income of black men, but it appears this difference is just barely significant.
+
+The second graph shows the income gap between men and women for each race. This is a more simple way to visualize the differences in average income. In this graph, significance is represented on any bar in which the error bars do not include the value zero. On any bars where this is true, we are 95% confident that the difference in income between men and women is non-zero. In this case specifically, the difference is non-zero and positive, meaning we are 95% confident that men have a larger average income than women.
+
+
+```{r}
+ed.data <- nlsy %>%
+  group_by(HighestGrade, gender) %>%
+  filter(n() >= 30) %>%
+  summarize(mean.income = mean(income, na.rm=TRUE),
+            lower = t.test(income)$conf.int[1],
+            upper = t.test(income)$conf.int[2])
+
+ggplot(data = ed.data, aes(x=HighestGrade, y=mean.income, fill=gender)) + geom_bar(stat="identity", position = "dodge") + geom_errorbar(aes(ymin=lower, ymax=upper), width=.2,position=position_dodge(0.9)) + theme(text = element_text(size=12)) + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + labs(x="Highest Education Level Attained", y="Average Income($)", title="Average income by educational attainment and gender") + theme(plot.title = element_text(hjust = 0.5))
+
+
+#HighestGrade
+gap.data2 <- nlsy %>%
+  group_by(HighestGrade) %>%
+  filter(n() >= 30) %>%
+  summarize(income.gap = t.test(income~gender, na.rm=TRUE)$estimate[1] - t.test(income~gender, na.rm=TRUE)$estimate[2], lower = t.test(income~gender)$conf.int[1],
+       upper = t.test(income~gender)$conf.int[2],
+       is.significant = ifelse(lower <=0, 0, 1))
+
+gap.data2 <- mutate(gap.data2, HighestGrade = reorder(HighestGrade, income.gap))
+
+
+ggplot(gap.data2, aes(x=HighestGrade, y=income.gap)) + 
+  geom_bar(position="dodge", stat="identity")+
+labs(y="Income Gap($)", x = "Highest Education Level Attained",
+     title = "Income gap between men and women, by highest grade") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_errorbar (aes(ymin=lower, ymax=upper), width=.2,
+  position=position_dodge(0.9)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+The first plot shows us that there is an income gap between men and women across all levels of educational attainment. While we can see from the first table that the average income of both men and women increases significantly as education attainment increases (with the exception of middle school to some high school for men and perhaps bachelors to post bachelors for men), the second table reveals that the income gap actually increases with increasing education. In other words, while men with some high school get paid on average slightly less than 10,000 dollars more than women with some high school, men with a bachelors get paid approximately more than 27,500 dollars more than women with a bachelors. The income gap appears to be slightly less for men and women with post-bachelors education, but this error bar overlaps with the mean income gap for bachelors degrees, so this difference is not significant.
+
+```{r}
+occ.data <- occ.data1 %>%
+  group_by(occupation, gender) %>%
+  filter(n() >= 15)%>%
+  summarize(mean.income = mean(income, na.rm=TRUE),
+             lower = t.test(income)$conf.int[1],
+            upper = t.test(income)$conf.int[2])
+
+ggplot(data = occ.data, aes(x=occupation, y=mean.income, fill = gender)) + geom_bar(stat="identity", position = "dodge") + theme(text = element_text(size=12)) + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + geom_errorbar(aes(ymin=lower, ymax=upper), width=.3,position=position_dodge(0.9)) + ggtitle("Average income of men and women, by occupation") + theme(plot.title = element_text(hjust = 0.5))
+
+#Occupation
+gap.data4 <- occ.data1 %>% 
+  group_by(occupation) %>%
+  filter(n() >= 30) %>%
+  summarize(income.gap = mean(income[gender == "Male"], na.rm = TRUE) - mean(income[gender == "Female"], na.rm = TRUE), lower = t.test(income~gender)$conf.int[1],
+       upper = t.test(income~gender)$conf.int[2],
+       is.significant = ifelse(lower <=0, 0, 1))
+
+gap.data4 <- mutate(gap.data4, occupation = reorder(occupation, income.gap))
+
+ggplot(data = gap.data4, aes(x = occupation, y = income.gap, fill = is.significant)) + geom_bar(stat = "identity") + labs(x = "Occupation", y = "Income gap($)", title = "Income gap between men and women, by occupation") + guides(fill = FALSE) + geom_errorbar(aes(ymax = upper, ymin = lower), width = 0.3, position = position_dodge(0.9)) + theme(text = element_text(size=12)) + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + theme(plot.title = element_text(hjust = 0.5))
+```
+
+The plots above show that there are many occupation groups for which there is a signifcant income gap between men and women. In the second plot, we see that all but seven of the occupation groups show a significant income gap between men and women. The bars colored __dark blue__ are not significant because their confidence intervals (error bars) include the value zero, meaninng we cannot be 95% confident that the difference in incomes is non-zero. Again, we see that for each of these occupations, the difference is positive, meaning men make an average income greater than that of women.
+
+The first table shows that there are some occupations that have a count of female participants (membership) less than 15. These groups are: *Math/ComputerScient* and *ConstructTradeExtract*. Similarly, there are groups with less than 15 men (*Lawyer/Judge/LegalSupp*, *Ed/Training/LibWorker*, and *Media/CommunicationWorker*) These groups should ultimately be excluded from a final analysis because of low participation by either one of the two genders.
+
+```{r}
+ind.data <- ind.data1 %>%
+  group_by(industry, gender) %>%
+  filter(n() >=30) %>%
+  summarize(mean.income = mean(income, na.rm=TRUE), 
+            lower = t.test(income)$conf.int[1],
+            upper = t.test(income)$conf.int[2])
+
+ggplot(data = ind.data, aes(x=industry, y=mean.income, fill = gender)) + geom_bar(stat="identity", position = "dodge") + theme(text = element_text(size=12)) + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + geom_errorbar(aes(ymin=lower, ymax=upper), width=.3,position=position_dodge(0.9)) + ggtitle("Average income of men and women, by occupation") + theme(plot.title = element_text(hjust = 0.5))
+
+#Industry
+gap.data3 <- ind.data1 %>%
+  group_by(industry) %>%
+  filter(n() >= 30) %>%
+  summarize(income.gap = mean(income[gender == "Male"], na.rm = TRUE) - mean(income[gender == "Female"], na.rm = TRUE), lower = t.test(income~gender)$conf.int[1],
+       upper = t.test(income~gender)$conf.int[2],
+       is.significant = ifelse(lower <=0, 0, 1))
+
+gap.data3 <- mutate(gap.data3, industry = reorder(industry, income.gap))
+
+ggplot(data = gap.data3, aes(x = industry, y = income.gap, fill=is.significant)) + geom_bar(stat = "identity") + xlab ("Race") +ylab ("Income gap($)") + ggtitle("Income gap between men and women, by industry") + guides(fill = FALSE) + geom_errorbar(aes(ymax = upper, ymin = lower), width = 0.2, position=position_dodge(0.9)) + theme(text = element_text(size=12)) + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+The plots above show that most industries have a significant income gap between men and women. The second plot in particular shows that 12 out of 18 industries have signficant income gaps (those colored in light blue). In all 12 of these industries, men earn a higher average income than women, with *Professional/Scientific/Technical* industry showing the largest income gap of more than $35,000.
+
+## Next we will look at linear regression models for income on different variables.
+The first model considers if a linear model is an appropriate description of the data by looking at a regression of __income on gender__.
+
+```{r}
+gender.lm <- lm(income~gender, data = nlsy)
+kable(summary(gender.lm)$coef, digits = c(3, 3, 3, 4))
+plot(gender.lm)
+```
+
+
+
+
+The plots produced for the linear regression model of income on gender show that a linear model is most likely not the best fit for our data. It is hard to glean too much information from the __Residuals vs. Fitted__ plot because gender is a categorical variable of only two groups, so while there appears to be constant variance, we can't put too much faith in this plot because of the lack of groups.
+
+The __Normal Q-Q Plot__ is perhaps more telling that the Residual vs. Fitted plot, as it shows that the residuals do not appear to be roughly normally distributed (particularly along the tails). Therefore, we cannot place too much faith in the p-value derived from this linear regression model because the linear model itself does not seem to accurately describe the data.
+
+From the last two plots, we can't see any real evidence of outliers (and this may be due in part to the fact that we have already removed topcoded values from the data).
+
+*Perhaps one of the reasons the linear regression isn't sufficient at this point is because there are many other variables at play that impact the factor, including interactions between variables. Therefore, in the following regressions and ANOVA's we will see if any of the other variables we've examined can be used to strengthen a regression model*
+
+
+The next regression is for __income on gender and race__. The second regression below incorporates an interaction term between race and gender.
+```{r}
+race.lm <- lm(income~gender + race, data = nlsy)
+race.lm2 <- lm(income~gender + race + gender:race, data = nlsy)
+
+kable(summary(race.lm)$coef, digits = c(3, 3, 3, 4))
+kable(summary(race.lm2)$coef, digits = c(3, 3, 3, 4))
+
+kable(anova(race.lm, race.lm2))
+
+plot(race.lm2)
+
+```
+
+The highly significant pvalue from the anova suggests that the income gap is not the same across groups of race. In other words, the income gap between men and women does vary with race, and the race:gender interaction term should be used in our model.
+
+
+The next regression model is for __income on gender and educational attainment__. The second regression of the two incorporates an interaction term between gender and enducational attainment.
+
+
+```{r}
+nlsy1 <- nlsy %>%
+  group_by(HighestGrade) %>%
+  filter(n() >= 30)
+ed.lm <- lm(income~gender + HighestGrade, data = nlsy1)
+ed.lm2 <- lm(income~gender + HighestGrade + gender:HighestGrade, data = nlsy1)
+
+anova(ed.lm, ed.lm2)
+
+kable(summary(ed.lm)$coef, digits = c(3, 3, 3, 4))
+kable(summary(ed.lm2)$coef, digits = c(3, 3, 3, 4))
+
+plot(ed.lm2)
+```
+
+
+The p value of the ANOVA test is highly significant. This suggests that the income gap between men and women varies with the highest education level attained as well. For that reason, we will try to include the interaction term of gender:HighestGrade in our final, "full" regression model.
+
+The next regression model is for __income on gender and occupation__. The second regression of the two incorporates an interaction term between gender and occupation.
+
+
+
+```{r}
+occ.lm <- lm(income~gender + occupation, data = occ.data1)
+occ.lm2 <- lm(income~gender + occupation + gender:occupation, data = occ.data1)
+
+anova(occ.lm, occ.lm2)
+
+kable(summary(occ.lm)$coef, digits = c(3, 3, 3, 4))
+kable(summary(occ.lm2)$coef, digits = c(3, 3, 3, 4))
+
+plot(occ.lm2)
+```
+
+The p value of the ANOVA test is highly significant. This suggests that the income gap between men and women varies with occupational group. As a result, we will try to include the interaction term gender:occupation in our final, "full" model.
+
+The next regression model is for __income on gender and industry__. The second regression of the two incorporates an interaction term between gender and occupation.
+
+
+```{r}
+ind.lm <- (lm(income~gender + industry, data = ind.data1))
+ind.lm2 <- (lm(income~gender + industry + gender:industry, data = ind.data1))
+
+anova(ind.lm, ind.lm2)
+
+kable(summary(ind.lm)$coef, digits = c(3, 3, 3, 4))
+kable(summary(ind.lm2)$coef, digits = c(3, 3, 3, 4))
+
+plot(ind.lm2)
+```
+
+The p value of the ANOVA test is highly significant. This suggests that the income gap between men and women varies with industry group. We will try to include this interaction term in our final model.
+
+
+## Evaluating Regression Plots
+Individually, each of these regression plots seem to show that a linear regression is not a great description of the data. This is because many of the same issues discussed previously (the variance in the residuals on the __Residuals vs. Fitted__ plot does not appear constant, and the residuals in the __Q-Q Plot__ do not seem to be normally distributed.)
+
+Let's see what happens when we do try to put these terms together.
+
+The first regression model is a regression of income on gender, industry, occupation and race. The second is a regression of income on gender, industry, occupation, and race, as well as an interaction term between gender and each of the variables.
+
+```{r}
+nlsy3 <- nlsy [ ! nlsy$occupation %in% c("PhysicScientist", "SocialScientist", "Life/Physical/SocSciTech", "EntertainAttendant", "ArmedForces", "NotLabor", "Uncodeable", "FoodPrepOccup", "Farm/Fish/ForestryOccup", "skip1", "skip2", "skip3", "skip4", "skip5"),]
+
+#nlsy3 <- nlsy3 [ ! nlsy$industry %in% c("Mining", "ArmedForces", "NotLabor", "Uncodeable", #"skip5", "skip4", "skip3", "skip2", "skip1"),]
+
+full.lm <- lm(income ~ gender + industry + occupation + race, data = nlsy3)
+full.lm2 <- lm(income ~ gender + industry + occupation + race + gender:HighestGrade + gender:race + gender:occupation + gender:industry, data = nlsy3)
+
+
+plot(full.lm)
+plot(full.lm2)
+
+```
+
+
+
+Overall, the linear regression produced does not seem to do a great job describing the data produced. The variation of the residuals, as shown on the Residuals Vs. Fitted plot, is not constant. Adding interaction terms seems to make the variance slightly more consistent, but ultimately does not do enough. Similarly, the interaction terms seem to make the residuals slighlty more normally distributed on the high tail of the data, but makes the data less normally distrubted on the low tail.
+
+Since I only considered categorical variables in this study, there are likely nonlinear interactions taking place that could have been modeled as well if continuous variables had been selected originally. (For example, perhaps a squared regression could have been implemented.)
+
+# Summary
+In conclusion of some of the findings laid out in this report, there does appear to be a significant income gap between men and women, and this gap appears to persist even in considering many other factors like race, education level, occupation and industry. Though there are some occupations and industries where this does not seem true, these occupations and industries are few and far in between (the exception rather than the rule).
+
+Despite these findings, the linear model I produced through regression is insufficient to use as a predictive tool because it fails to describe the data to a satisfactory extent. Some of this is due to the fact that income is not normally distributed, as was discussed at the very beginning of this report (bimodal, right-skewed distribution). Future studies should examine nonlinear models that may do a better job at describing the data, and should consider perhaps continuous variables as opposed to only categorical variables.
+
+
+
+
+```{r}
+
+```
+# Methodology
+
+## Missing Values
+There were no missing values for the variables "race," "gender," and "education level".
+However, there were many missing values for the other four variables in my model: income, occupation, industry.
+__Income__
+For income, I felt it was best to exclude missing values, even those for which we know the participant "refused" to answer or "didn't know" their income, because the only other reasonable option would be to set these values to zero. I felt this option would harm the validity of the analyses because there may be many reasons why someone might "refuse" to answer this question and "zero" is likely not an accurate reflection of all of their salaries. Those who "don't know" their income also likely make more than zero, or they would have likely known the value to be zero.
+
+__Occupation__
+For occupation, the only group with missing values was the "Valid Skip" group. Contrary to my initial thoughts, this group does not reflect participants who are not in the labor force, as that group is already accounted for in the occupation groups. Therefore, I couldn't determine a logical explanation for what the "valid skip" groups represent and decided the group should be excluded from the model.
+
+__Industry__
+The industry data was similar to the occupation data. The only missing values were "Valid Skips." For the same rationale as "Occupation," I excluded these values.
+
+## Topcoded Variables
+I performed one linear regression that included the topcoded values and another linear regression that excluded the topcoded values. Removing the topcoded values was shown to improve the quality of the regression by allowing the model to better describe the data.
+
+
+
+
+## Any lack luster tables or plots?
+```{r}
+ggplot(nlsy, aes(x =race, y = income, fill = gender)) +geom_violin()
+```
+## Investigations not appearing in Findings?
+There were no investigations that did not appear in these findings.
+
+## What did you finally settle on?
+The linear model that was ultimately selected apepars in the Findings section, but it does not adequately describe the data.
+
+
+
+## You can see some of my count tables below. These helped to determine which subgroups needed to be excluded from certain variables as a result of low counts.
+First, we have a count table that shows the number of male and female participants within each "race" group that is coded in the survey.
+
+```{r}
+
+race.data <- nlsy %>%
+  group_by(race, gender) %>%
+summarize(count = n())
+kable(spread(race.data, gender, count))
+
+```
+
+We can also look at the number of male and female participants for each of the potential occupation groups coded in the survey questions. We will later elimate those occupation groups that do not have 30 or more participants, since low counts can invalidate some of our survey results.
+
+```{r}
+occ.data <- nlsy %>%
+  group_by(occupation, gender) %>%
+summarize(count = n())
+kable(spread(occ.data, gender, count), format = "markdown")
+```
+
+We will also be consdering whether or not the variable "industry" is a useful for including in our model of the income gap between men and women. The table below shows counts for industry groups so we can determine which groups may need to be excluded from our model.
+
+```{r}
+ind.data <- nlsy %>%
+  group_by(industry, gender) %>%
+summarize(count = n())
+kable(spread(ind.data, gender, count), format = "markdown")
+```
+
+Lastly, we will examine whether or not the highest education level a person received informs our model of the income gap. The table below provides counts of participants in each group to determine which groups can be excluded from our model.
+
+```{r}
+ed.data <- nlsy %>%
+  group_by(HighestGrade, gender) %>%
+summarize(count = n())
+kable(spread(ed.data, gender, count), format = "markdown")
+```
+
+
+ 
